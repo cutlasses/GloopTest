@@ -2,7 +2,7 @@
 TARGET = Gloop
 
 # Sources
-CPP_SOURCES = Board.cpp GloopTest.cpp
+CPP_SOURCES = GloopTest.cpp
 
 # Library Locations
 LIBDAISY_DIR = ../libdaisy/
@@ -14,11 +14,4 @@ include $(SYSTEM_FILES_DIR)/Makefile
 
 BUILDDIR := build
 
-CPPFLAGS += --include CompileSwitches.h --include Board.h
-
-CPP_STANDARD = -std=gnu++17
-
-#OPT = -Os
-
-#LDFLAGS = -u -printf_float
 

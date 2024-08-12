@@ -2,3 +2,10 @@
 build/startup_stm32h750xx.o
 build/startup_stm32h750xx.lst
 build/startup_stm32h750xx.d
+build/Gloop.bin
+build/Gloop.elf
+build/Gloop.hex
+build/Gloop.map
+build/GloopTest.d
+build/GloopTest.lst
+build/GloopTest.o
