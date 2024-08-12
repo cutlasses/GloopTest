@@ -2,7 +2,7 @@
 TARGET = Gloop
 
 # Sources
-CPP_SOURCES = BitCrush.cpp Board.cpp ButtonStrip.cpp DebugOutput.cpp EncoderValueTypes.cpp Flash.cpp Gloop.cpp GloopInterface.cpp GraphicalDisplay.cpp Looper.cpp PlayHead.cpp Profiler.cpp ExternalTriggers.cpp RandomLFO.cpp TapeEffect.cpp
+CPP_SOURCES = Board.cpp GloopTest.cpp
 
 # Library Locations
 LIBDAISY_DIR = ../libdaisy/
