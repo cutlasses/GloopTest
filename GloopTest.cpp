@@ -1,7 +1,10 @@
 #include "daisy_seed.h"
-#include "daisysp.h"
+#include "dev/oled_ssd130x.h"
+
+#include "DisplayDriver.h"
 
 using namespace daisy;
+using Screen = daisy::OledDisplay<OLED_1_3_inch<daisy::SSD130x4WireSpiTransport>>; 
 
 
 DaisySeed hw;
