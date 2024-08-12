@@ -93,35 +93,35 @@ void initialise_screen()
 	screen.Init(display_config);         
 }        
 
-    void draw_test_screen()
-    {
-        constexpr int line_length = 8;
-        constexpr int half_line_length = line_length / 2;
-        constexpr int x_extent = SCREEN_WIDTH - 1;
-        constexpr int y_extent = SCREEN_HEIGHT - 1;
-        constexpr int x_centre = x_extent / 2;
-        constexpr int y_centre = y_extent / 2;
+void draw_test_screen()
+{
+	constexpr int line_length = 8;
+	constexpr int half_line_length = line_length / 2;
+	constexpr int x_extent = SCREEN_WIDTH - 1;
+	constexpr int y_extent = SCREEN_HEIGHT - 1;
+	constexpr int x_centre = x_extent / 2;
+	constexpr int y_centre = y_extent / 2;
 
-        // top left
-        screen.DrawLine(0, 0, line_length, 0, true);
-        screen.DrawLine(0, 0, 0, line_length, true);
+	// top left
+	screen.DrawLine(0, 0, line_length, 0, true);
+	screen.DrawLine(0, 0, 0, line_length, true);
 
-        // top right
-        screen.DrawLine(x_extent, 0, x_extent - line_length, 0, true);
-        screen.DrawLine(x_extent, 0, x_extent, line_length, true);
+	// top right
+	screen.DrawLine(x_extent, 0, x_extent - line_length, 0, true);
+	screen.DrawLine(x_extent, 0, x_extent, line_length, true);
 
-        // bottom left
-        screen.DrawLine(0, y_extent, 0, y_extent - line_length, true);
-        screen.DrawLine(0, y_extent, line_length, y_extent, true);
+	// bottom left
+	screen.DrawLine(0, y_extent, 0, y_extent - line_length, true);
+	screen.DrawLine(0, y_extent, line_length, y_extent, true);
 
-        // bottom right
-        screen.DrawLine(x_extent, y_extent, x_extent - line_length, y_extent, true);
-        screen.DrawLine(x_extent, y_extent, x_extent, y_extent - line_length, true);
+	// bottom right
+	screen.DrawLine(x_extent, y_extent, x_extent - line_length, y_extent, true);
+	screen.DrawLine(x_extent, y_extent, x_extent, y_extent - line_length, true);
 
-        // centre
-        screen.DrawLine(x_centre - half_line_length, y_centre, x_centre + half_line_length, y_centre, true);
-        screen.DrawLine(x_centre, y_centre - half_line_length, x_centre, y_centre + half_line_length, true);    
-    }
+	// centre
+	screen.DrawLine(x_centre - half_line_length, y_centre, x_centre + half_line_length, y_centre, true);
+	screen.DrawLine(x_centre, y_centre - half_line_length, x_centre, y_centre + half_line_length, true);    
+}
 
 
 void audio_callback(const float* in, float* out, size_t size)
@@ -141,8 +141,15 @@ int main(void)
 
 	hw.StartAudio(audio_callback);
 
+	initialise_hw();
+	initialise_screen();
+
 	while(1)
 	{
+		draw_test_screen();
 
+		screen.Update();
+
+		hw.DelayMs(1);
 	}
 }
