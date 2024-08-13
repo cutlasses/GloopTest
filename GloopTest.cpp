@@ -91,7 +91,80 @@ void initialise_screen()
 	display_config.driver_config.transport_config.pin_config.reset = screen_reset_pin;
 
 	screen.Init(display_config);         
-}        
+}
+
+float read_multiplexed_input(int input_index)
+{
+	return hw.adc.GetMuxFloat(0, input_index);
+}
+
+float read_pot(int pot_index)
+{
+	// pin order is non-sequential (due to board layout)
+	switch(pot_index)
+	{
+		case 0:
+		{
+			return read_multiplexed_input(0);
+		}
+		case 1:
+		{
+			return read_multiplexed_input(3);
+		}
+		case 2:
+		{
+			return read_multiplexed_input(6);
+		}
+		case 3:
+		{
+			return read_multiplexed_input(7);
+		}
+	}
+
+	return 0.0f;
+}
+
+float read_cv(int cv_index)
+{
+	// pin order is non-sequential (due to board layout)
+	float cv = 0.0f;
+	switch(cv_index)
+	{
+		case 0:
+		{
+			cv = read_multiplexed_input(2);
+			break;
+		}
+		case 1:
+		{
+			cv = read_multiplexed_input(1);
+			break;
+		}
+		case 2:
+		{
+			cv = read_multiplexed_input(4);
+			break;
+		}
+		case 3:
+		{
+			cv = read_multiplexed_input(5);
+			break;
+		}
+	}
+
+	// invert due to inverting op-amp
+	const float invert_cv = 1.0f - cv;
+
+	if(invert_cv < 0.0f)
+	{
+		return 0.0f;
+	}
+	else if(invert_cv > 1.0f)
+	{
+		return 1.0f;
+	}
+	return invert_cv;
+}
 
 void draw_test_screen()
 {
@@ -146,7 +219,97 @@ int main(void)
 
 	while(1)
 	{
+		int cursor_x = 2;
+		int cursor_y = 2;
+
+		/// Debounce controls ///
+		menu_switch.Debounce();
+		record_switch.Debounce();
+		clear_switch.Debounce();
+
+		for(int i = 0; i < NUM_ENCODERS; ++i)
+		{
+			encoders[i].Debounce();
+		}
+			
 		draw_test_screen();
+
+		screen.SetCursor(cursor_x, cursor_y);
+
+		if(menu_switch.RisingEdge())
+		{
+			screen.WriteString("Menu", Font_6x8, true);
+		}
+		else if(record_switch.RisingEdge())
+		{
+			screen.WriteString("Record", Font_6x8, true);
+		}
+		else if(clear_switch.RisingEdge())
+		{
+			screen.WriteString("Clear", Font_6x8, true);
+		}
+
+		cursor_y += 8;
+		screen.SetCursor(cursor_x, cursor_y);
+
+		/// Encoders ///
+		char string_buffer[32];
+		for(int i = 0; i < NUM_ENCODERS; ++i)
+		{
+			const daisy::Encoder& encoder = encoders[i];
+			if(int32_t inc = encoder.Increment())
+			{
+				snprintf(string_buffer, sizeof(string_buffer), "Encoder %d inc %ld", i, inc);
+				screen.WriteString(string_buffer, Font_6x8, true);
+				break;
+			}
+			else if(encoder.RisingEdge())
+			{
+				snprintf(string_buffer, sizeof(string_buffer), "Encoder %d pressed", i);
+				screen.WriteString(string_buffer, Font_6x8, true);
+				break;
+			}
+		}
+
+		cursor_y += 8;
+		screen.SetCursor(cursor_x, cursor_y);
+
+		// pots ///
+		cursor_x = 2;
+		for(int i = 0; i < NUM_PLAY_HEADS; ++i)
+		{
+			snprintf(string_buffer, sizeof(string_buffer), "%2f", read_pot(i));
+			screen.WriteString(string_buffer, Font_6x8, true);
+
+			cursor_x += strlen(string_buffer);
+			screen.SetCursor(cursor_x, cursor_y);
+		}
+
+		cursor_x = 2;
+		cursor_y += 8;
+
+		/// trigger ///
+		const bool trig = trig_pin_gpio.Read();
+		if(trig)
+		{
+			screen.WriteString("TrigOn", Font_6x8, true);
+		}
+		else
+		{
+			screen.WriteString("TrigOff", Font_6x8, true);
+		}
+
+		cursor_x += strlen("TrigOff") + 6;
+
+		/// CV ///
+		for(int i = 0; i < NUM_PLAY_HEADS; ++i)
+		{
+			snprintf(string_buffer, sizeof(string_buffer), "%2f", read_cv(i));
+			screen.WriteString(string_buffer, Font_6x8, true);
+
+			cursor_x += strlen(string_buffer);
+			screen.SetCursor(cursor_x, cursor_y);
+		}
 
 		screen.Update();
 
