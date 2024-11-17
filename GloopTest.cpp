@@ -231,6 +231,9 @@ int main(void)
 
 	const FontDef& font = Font_6x8;
 
+	int active_led = 0;
+	uint32_t led_next_time = 0;
+
 	while(1)
 	{
 		screen.Fill(false);
@@ -320,6 +323,26 @@ int main(void)
 		{
 			snprintf(string_buffer, sizeof(string_buffer), "%d ", int(read_cv(i)*100));
 			screen.WriteString(string_buffer, font, true);
+		}
+
+		/// LEDs ///
+		for(int i = 0; i < NUM_PLAY_HEADS; ++i)
+		{
+			if(i == active_led )
+			{
+				leds[i].Write(true);
+			}
+			else
+			{
+				leds[i].Write(false);
+			}
+		}
+
+		const uint32_t time_ms = daisy::System::GetNow();
+		if( time_ms > led_next_time)
+		{
+			led_next_time = time_ms + 500;
+			active_led = (active_led + 1) % NUM_PLAY_HEADS;
 		}
 
 		screen.Update();
