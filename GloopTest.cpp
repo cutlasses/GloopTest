@@ -247,7 +247,7 @@ int main(void)
 
 			screen.WriteString(label, font, true);
 			screen.WriteString(":", font, true);
-			if(sw.RisingEdge())
+			if(sw.Pressed())
 			{
 				screen.WriteString("d ", font, true);
 			}
@@ -274,15 +274,16 @@ int main(void)
 			encoder.Debounce();
 			const int inc = encoder.Increment();
 
-			snprintf(string_buffer, sizeof(string_buffer), "%d ", inc);
+			snprintf(string_buffer, sizeof(string_buffer), "%d", inc);
 			screen.WriteString(string_buffer, font, true);
 
-			if(encoder.RisingEdge())
+			if(encoder.Pressed())
 			{
 				snprintf(string_buffer, sizeof(string_buffer), "p");
 				screen.WriteString(string_buffer, font, true);
-				break;
 			}
+
+			screen.WriteString(" ", font, true);
 		}
 
 		cursor_y += font.FontHeight;
@@ -310,7 +311,9 @@ int main(void)
 			screen.WriteString("T:off", font, true);
 		}
 
-		screen.WriteString(" CV: ", font, true);
+		cursor_y += font.FontHeight;
+		screen.SetCursor(cursor_x, cursor_y);
+		screen.WriteString("CV: ", font, true);
 
 		/// CV ///
 		for(int i = 0; i < NUM_PLAY_HEADS; ++i)
