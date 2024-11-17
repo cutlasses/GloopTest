@@ -59,6 +59,13 @@ daisy::Switch menu_switch;
 
 Screen screen;
 
+struct ValueCache
+{
+	int value = 0;
+	uint32_t time_changed = 0;
+};
+ValueCache encoder_values[NUM_ENCODERS];
+
 void initialise_hw()
 {
 	encoders[0].Init(enc1_b_pin, enc1_a_pin, enc1_sw_pin);
@@ -236,6 +243,8 @@ int main(void)
 
 	while(1)
 	{
+		const uint32_t time_ms = daisy::System::GetNow();
+
 		screen.Fill(false);
 
 		int cursor_x = 2;
@@ -277,7 +286,13 @@ int main(void)
 			encoder.Debounce();
 			const int inc = encoder.Increment();
 
-			snprintf(string_buffer, sizeof(string_buffer), "%d", inc);
+			if(encoder_values[i].value != inc && encoder_values[i].time_changed + 500 < time_ms)
+			{
+				encoder_values[i].value = inc;
+				encoder_values[i].time_changed = time_ms;
+			}
+
+			snprintf(string_buffer, sizeof(string_buffer), "%d", encoder_values[i].value);
 			screen.WriteString(string_buffer, font, true);
 
 			if(encoder.Pressed())
@@ -338,7 +353,6 @@ int main(void)
 			}
 		}
 
-		const uint32_t time_ms = daisy::System::GetNow();
 		if( time_ms > led_next_time)
 		{
 			led_next_time = time_ms + 500;
