@@ -105,19 +105,19 @@ float read_pot(int pot_index)
 	{
 		case 0:
 		{
-			return read_multiplexed_input(0);
+			return 1.0f-read_multiplexed_input(0);
 		}
 		case 1:
 		{
-			return read_multiplexed_input(3);
+			return 1.0f-read_multiplexed_input(3);
 		}
 		case 2:
 		{
-			return read_multiplexed_input(6);
+			return 1.0f-read_multiplexed_input(6);
 		}
 		case 3:
 		{
-			return read_multiplexed_input(7);
+			return 1.0f-read_multiplexed_input(7);
 		}
 	}
 
@@ -175,6 +175,8 @@ void draw_test_screen()
 	constexpr int x_centre = x_extent / 2;
 	constexpr int y_centre = y_extent / 2;
 
+	screen.DrawRect(0, 0, SCREEN_WIDTH-1, SCREEN_HEIGHT-1, false/*on*/, true/*fill*/);
+
 	// top left
 	screen.DrawLine(0, 0, line_length, 0, true);
 	screen.DrawLine(0, 0, 0, line_length, true);
@@ -217,102 +219,108 @@ int main(void)
 	initialise_hw();
 	initialise_screen();
 
+	// fill the screen to check for dead pixels
+	screen.DrawRect(0, 0, SCREEN_WIDTH-1, SCREEN_HEIGHT-1, true/*on*/, true/*fill*/);
+	screen.Update();
+	hw.DelayMs(2000);
+
+	// draw test screen
+	draw_test_screen();
+	screen.Update();
+	hw.DelayMs(2000);
+
+	const FontDef& font = Font_6x8;
+
 	while(1)
 	{
+		screen.Fill(false);
+
 		int cursor_x = 2;
 		int cursor_y = 2;
 
-		/// Debounce controls ///
-		menu_switch.Debounce();
-		record_switch.Debounce();
-		clear_switch.Debounce();
-
-		for(int i = 0; i < NUM_ENCODERS; ++i)
-		{
-			encoders[i].Debounce();
-		}
-			
-		draw_test_screen();
-
 		screen.SetCursor(cursor_x, cursor_y);
 
-		if(menu_switch.RisingEdge())
+		// button
+		auto draw_switch = [&font](daisy::Switch& sw, const char* label)
 		{
-			screen.WriteString("Menu", Font_6x8, true);
-		}
-		else if(record_switch.RisingEdge())
-		{
-			screen.WriteString("Record", Font_6x8, true);
-		}
-		else if(clear_switch.RisingEdge())
-		{
-			screen.WriteString("Clear", Font_6x8, true);
-		}
+			sw.Debounce();
 
-		cursor_y += 8;
+			screen.WriteString(label, font, true);
+			screen.WriteString(":", font, true);
+			if(sw.RisingEdge())
+			{
+				screen.WriteString("d ", font, true);
+			}
+			else
+			{
+				screen.WriteString("u ", font, true);
+			}
+		};
+
+		draw_switch(menu_switch, "Men");
+		draw_switch(record_switch, "Rec");
+		draw_switch(clear_switch, "Clr");
+
+		cursor_y += font.FontHeight;
 		screen.SetCursor(cursor_x, cursor_y);
+		screen.WriteString("Enc ", font, true);
 
 		/// Encoders ///
 		char string_buffer[32];
 		for(int i = 0; i < NUM_ENCODERS; ++i)
 		{
-			const daisy::Encoder& encoder = encoders[i];
-			if(int32_t inc = encoder.Increment())
+			daisy::Encoder& encoder = encoders[i];
+
+			encoder.Debounce();
+			const int inc = encoder.Increment();
+
+			snprintf(string_buffer, sizeof(string_buffer), "%d ", inc);
+			screen.WriteString(string_buffer, font, true);
+
+			if(encoder.RisingEdge())
 			{
-				snprintf(string_buffer, sizeof(string_buffer), "Encoder %d inc %ld", i, inc);
-				screen.WriteString(string_buffer, Font_6x8, true);
-				break;
-			}
-			else if(encoder.RisingEdge())
-			{
-				snprintf(string_buffer, sizeof(string_buffer), "Encoder %d pressed", i);
-				screen.WriteString(string_buffer, Font_6x8, true);
+				snprintf(string_buffer, sizeof(string_buffer), "p");
+				screen.WriteString(string_buffer, font, true);
 				break;
 			}
 		}
 
-		cursor_y += 8;
+		cursor_y += font.FontHeight;
 		screen.SetCursor(cursor_x, cursor_y);
+		screen.WriteString("Pot ", font, true);
 
 		// pots ///
-		cursor_x = 2;
 		for(int i = 0; i < NUM_PLAY_HEADS; ++i)
 		{
-			snprintf(string_buffer, sizeof(string_buffer), "%2f", read_pot(i));
-			screen.WriteString(string_buffer, Font_6x8, true);
-
-			cursor_x += strlen(string_buffer);
-			screen.SetCursor(cursor_x, cursor_y);
+			snprintf(string_buffer, sizeof(string_buffer), "%d ", int(read_pot(i)*100));
+			screen.WriteString(string_buffer, font, true);
 		}
 
-		cursor_x = 2;
-		cursor_y += 8;
+		cursor_y += font.FontHeight;
+		screen.SetCursor(cursor_x, cursor_y);
 
 		/// trigger ///
 		const bool trig = trig_pin_gpio.Read();
 		if(trig)
 		{
-			screen.WriteString("TrigOn", Font_6x8, true);
+			screen.WriteString("T:on", font, true);
 		}
 		else
 		{
-			screen.WriteString("TrigOff", Font_6x8, true);
+			screen.WriteString("T:off", font, true);
 		}
 
-		cursor_x += strlen("TrigOff") + 6;
+		screen.WriteString(" CV: ", font, true);
 
 		/// CV ///
 		for(int i = 0; i < NUM_PLAY_HEADS; ++i)
 		{
-			snprintf(string_buffer, sizeof(string_buffer), "%2f", read_cv(i));
-			screen.WriteString(string_buffer, Font_6x8, true);
-
-			cursor_x += strlen(string_buffer);
-			screen.SetCursor(cursor_x, cursor_y);
+			snprintf(string_buffer, sizeof(string_buffer), "%d ", int(read_cv(i)*100));
+			screen.WriteString(string_buffer, font, true);
 		}
 
 		screen.Update();
 
-		hw.DelayMs(1);
+		//hw.DelayMs(1);
 	}
 }
