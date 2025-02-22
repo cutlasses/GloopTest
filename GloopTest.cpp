@@ -2,6 +2,7 @@
 #include "dev/oled_ssd130x.h"
 
 #include "DisplayDriver.h"
+#include "i2c.h"
 
 using Screen = daisy::OledDisplay<OLED_1_3_inch<daisy::SSD130x4WireSpiTransport>>; 
 
@@ -173,6 +174,19 @@ float read_cv(int cv_index)
 	return invert_cv;
 }
 
+void test_i2c()
+{
+	i2c_bus i2c;
+
+	constexpr uint8_t i2c_address = 5;
+	uint8_t byte_to_send = 42;
+	const uint32_t timeout = 1000;
+	i2c.write_data(i2c_address, &byte_to_send, sizeof(byte_to_send), timeout);
+
+	uint8_t byte_to_receive = 0;
+	i2c.read_data(i2c_address, &byte_to_receive, sizeof(byte_to_receive), timeout);
+}
+
 void draw_test_screen()
 {
 	constexpr int line_length = 8;
@@ -234,6 +248,9 @@ int main(void)
 	// draw test screen
 	draw_test_screen();
 	screen.Update();
+	hw.DelayMs(2000);
+
+	test_i2c();
 	hw.DelayMs(2000);
 
 	const FontDef& font = Font_6x8;
