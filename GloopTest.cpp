@@ -5,7 +5,7 @@
 #include "i2c.h"
 
 using Screen = daisy::OledDisplay<OLED_1_3_inch<daisy::SSD130x4WireSpiTransport>>; 
-
+// For 2.4" scree - using Screen = daisy::OledDisplay<daisy::SSD130x4WireSpi128x64Driver>;
 
 daisy::DaisySeed hw;
 
