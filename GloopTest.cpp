@@ -205,46 +205,56 @@ void archive_test()
 {
     i2c_bus i2c;
 
-    const FontDef &font = Font_6x8;
+    const FontDef &font = Font_16x26;
 
     constexpr uint8_t i2c_address = 16;
     uint8_t byte_to_send          = uint8_t(ArchiveCommand::RequestButtonStates);
     const uint32_t timeout        = 1000;
 
     volatile bool success = true;
+    uint32_t last_frame   = daisy::System::GetNow();
     while (1)
     {
         success = i2c.write_data(i2c_address, &byte_to_send, sizeof(byte_to_send), timeout);
 
-        screen.DrawRect(0, 0, SCREEN_WIDTH - 1, SCREEN_HEIGHT - 1, false /*on*/, true /*fill*/);
-
-        screen.SetCursor(0, 0);
-
         uint8_t button_states;
         if (success)
         {
-            i2c.read_data(i2c_address, &button_states, sizeof(byte_to_send), timeout);
+            success = i2c.read_data(i2c_address, &button_states, sizeof(byte_to_send), timeout);
+        }
 
-            if (button_states & 1)
+        const uint32_t time_now = daisy::System::GetNow();
+        const bool draw         = time_now - last_frame > 50;
+        if (draw)
+        {
+            last_frame = time_now;
+
+            screen.DrawRect(0, 0, SCREEN_WIDTH - 1, SCREEN_HEIGHT - 1, false /*on*/, true /*fill*/);
+
+            screen.SetCursor(0, 0);
+
+            if (success)
             {
-                screen.WriteString("Load", font, true);
-            }
-            else if (button_states & (1 << 1))
-            {
-                screen.WriteString("Save", font, true);
+                if (button_states & 1)
+                {
+                    screen.WriteString("Load", font, true);
+                }
+                else if (button_states & (1 << 1))
+                {
+                    screen.WriteString("Save", font, true);
+                }
+                else
+                {
+                    screen.WriteChar(button_states, font, true);
+                }
             }
             else
             {
-                screen.WriteChar(button_states, font, true);
+                screen.WriteString("No i2c", font, true);
             }
-        }
-        else
-        {
-            screen.WriteString("No i2c", font, true);
-        }
 
-        screen.Update();
-        hw.DelayMs(500);
+            screen.Update();
+        }
     }
 }
 
@@ -304,7 +314,7 @@ int main(void)
     // fill the screen to check for dead pixels
     screen.DrawRect(0, 0, SCREEN_WIDTH - 1, SCREEN_HEIGHT - 1, true /*on*/, true /*fill*/);
     screen.Update();
-    // hw.DelayMs(2000);
+    hw.DelayMs(2000);
 
     // test_i2c();
     archive_test();
