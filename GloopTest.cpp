@@ -175,30 +175,40 @@ float read_cv(int cv_index)
 
 void test_i2c()
 {
-    hw.SetLed(true);
+    // hw.SetLed(true);
+
+    const FontDef &font = Font_11x18;
 
     i2c_bus i2c;
 
     constexpr uint8_t i2c_address = 16;
     uint8_t byte_to_send          = 42;
     const uint32_t timeout        = 1000;
-    while (!i2c.write_data(i2c_address, &byte_to_send, sizeof(byte_to_send), timeout))
-        ;
+    bool success                  = i2c.write_data(i2c_address, &byte_to_send, sizeof(byte_to_send), timeout);
 
-    uint8_t byte_to_receive = 0;
-    bool success            = i2c.read_data(i2c_address, &byte_to_receive, sizeof(byte_to_receive), timeout);
-
-    bool led_on = true;
-    while (1)
+    if (success)
     {
-        if (success)
-        {
-            led_on = !led_on;
-            hw.SetLed(led_on);
-        }
+        uint8_t byte_to_receive = 0;
+        success                 = i2c.read_data(i2c_address, &byte_to_receive, sizeof(byte_to_receive), timeout);
 
-        hw.DelayMs(500);
+        if (byte_to_receive != byte_to_send)
+        {
+            success = false;
+        }
     }
+
+    screen.DrawRect(0, 0, SCREEN_WIDTH - 1, SCREEN_HEIGHT - 1, false /*on*/, true /*fill*/);
+    if (success)
+    {
+        screen.WriteString("i2c successful", font, true);
+    }
+    else
+    {
+        screen.WriteString("i2c failed", font, true);
+    }
+    screen.Update();
+
+    hw.DelayMs(2000);
 }
 
 void archive_test()
@@ -316,8 +326,8 @@ int main(void)
     screen.Update();
     hw.DelayMs(2000);
 
-    // test_i2c();
-    archive_test();
+    test_i2c();
+    // archive_test();
 
     // draw test screen
     draw_test_screen();
